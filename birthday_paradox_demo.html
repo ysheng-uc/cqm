@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Birthday Paradox — Live Demo</title>
+<style>
+  :root {
+    --maroon: #7A0019;
+    --maroon-dark: #56000F;
+    --maroon-tint: #F4E6E9;
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --panel2: #F7EEEF;
+    --text: #1a1a1a;
+    --muted: #6b6b6b;
+    --border: #E4CBD1;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1315;
+      --panel: #241819;
+      --panel2: #2e1c1e;
+      --text: #f5eceD;
+      --muted: #c9b3b6;
+      --border: #5c2229;
+      --maroon-tint: #3a1319;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1315; --panel: #241819; --panel2: #2e1c1e;
+    --text: #f5eceD; --muted: #c9b3b6; --border: #5c2229; --maroon-tint: #3a1319;
+  }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  .topbar {
+    background: var(--maroon);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    font-size: 0.95rem;
+  }
+  .wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+  }
+  h1 {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    margin: 6px 0 2px;
+    text-align: center;
+    color: var(--maroon);
+  }
+  .tagline {
+    text-align: center;
+    color: var(--muted);
+    margin: 0 0 20px;
+    font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  input[type="range"] {
+    width: min(420px, 80vw);
+    accent-color: var(--maroon);
+    height: 34px;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 10px;
+    border-radius: 6px;
+  }
+  input[type="range"]::-moz-range-track {
+    height: 10px;
+    border-radius: 6px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--maroon);
+    margin-top: -9px;
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--maroon);
+    border: none;
+    cursor: pointer;
+  }
+  button {
+    font-size: 1.05rem;
+    font-weight: 700;
+    padding: 14px 26px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--maroon), var(--maroon-dark));
+    color: white;
+    font-size: 1.2rem;
+    padding: 18px 34px;
+  }
+  .btn-secondary {
+    background: var(--panel2);
+    color: var(--maroon);
+    border: 1px solid var(--border);
+  }
+  .btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 14px 0 4px;
+  }
+
+  /* Guess panel */
+  .guess-box { text-align: center; }
+  .guess-box h2 { margin-top: 0; font-size: 1.2rem; color: var(--maroon); }
+  .guess-readout {
+    font-size: clamp(1.6rem, 4.5vw, 2.2rem);
+    font-weight: 800;
+    color: var(--text);
+    margin: 8px 0;
+  }
+
+  /* Reveal headline */
+  .reveal-headline {
+    text-align: center;
+    background: var(--maroon-tint);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+  .reveal-headline .big {
+    font-size: clamp(2rem, 7vw, 3.2rem);
+    font-weight: 900;
+    color: var(--maroon);
+    line-height: 1.1;
+  }
+  .reveal-headline .lead {
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .reveal-headline .why {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 10px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .reveal-headline .lead2 {
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 700;
+    color: var(--text);
+    margin: 2px 0 0;
+  }
+  .reveal-headline .why-transition {
+    margin-top: 18px;
+    font-weight: 800;
+    color: var(--maroon);
+    font-size: 1.05rem;
+  }
+  .reveal-headline .grid {
+    margin: 12px 0 4px;
+  }
+  .reveal-headline .match-detail {
+    margin-bottom: 2px;
+  }
+
+  /* Explore (live slider) */
+  .explore h2 { margin-top: 0; text-align: center; font-size: 1.1rem; color: var(--maroon); }
+  .live-readout {
+    text-align: center;
+    font-size: clamp(1.5rem, 5vw, 2.1rem);
+    font-weight: 800;
+    margin: 10px 0 4px;
+  }
+  .live-readout .n { color: var(--text); }
+  .live-readout .arrow { color: var(--muted); font-weight: 400; padding: 0 8px; }
+  .live-readout .pct { color: var(--maroon); }
+  .explore-sub {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 6px;
+  }
+
+  /* Simulate section */
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 18px 0;
+    min-height: 60px;
+  }
+  .chip {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--panel2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    border: 2px solid var(--border);
+    animation: pop 0.35s ease;
+  }
+  .chip.match {
+    background: var(--maroon);
+    color: white;
+    border-color: var(--maroon-dark);
+    animation: pulse 0.9s ease infinite;
+  }
+  @keyframes pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+  .result {
+    text-align: center;
+    font-size: clamp(1.1rem, 3vw, 1.4rem);
+    font-weight: 800;
+    margin: 8px 0 4px;
+    min-height: 1.6em;
+    color: var(--maroon);
+  }
+  .result.nomatch { color: var(--muted); }
+  .match-detail { text-align: center; color: var(--muted); font-size: 0.95rem; min-height: 1.3em; }
+  .stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 28px;
+    text-align: center;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .stat .num { font-size: 1.4rem; font-weight: 800; color: var(--maroon); }
+  .stat .lbl { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .auto-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    color: var(--muted); font-size: 0.9rem; margin-top: 10px;
+  }
+  .auto-toggle input { transform: scale(1.15); accent-color: var(--maroon); }
+
+  .explain h2 { margin-top: 0; font-size: 1.15rem; color: var(--maroon); }
+  .explain p { color: var(--muted); line-height: 1.55; font-size: 0.97rem; }
+
+  .chartwrap { display: flex; justify-content: center; overflow-x: auto; }
+  svg text { fill: var(--muted); font-size: 11px; }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="topbar"><span>CQM &nbsp;|&nbsp; LIVE DEMO</span><span>BIRTHDAY PARADOX</span></div>
+
+<div class="wrap">
+  <h1>🎂 The Birthday Paradox</h1>
+  <p class="tagline" id="taglineText">How many people do you need in a room before there's a greater than 50% chance that two share a birthday?</p>
+
+  <div class="panel guess-box" id="guessPanel">
+    <h2>What's your guess?</h2>
+    <p style="color:var(--muted); margin-top:-6px;">Slide to where you think the odds cross 50% — then reveal.</p>
+    <input type="range" id="guessSlider" min="2" max="100" value="50" />
+    <div class="guess-readout" id="guessDisplay">50 people</div>
+    <div class="btn-row">
+      <button class="btn-primary" id="revealBtn">Reveal the answer</button>
+    </div>
+  </div>
+
+  <div class="reveal-headline" id="revealHeadline" style="display:none;">
+    <div class="big" id="revealBig">23 people</div>
+    <div class="lead2" id="revealLead">50.7% chance of a shared birthday</div>
+    <div class="why-transition">Surprised? Here's why.</div>
+    <div class="grid" id="revealGrid"></div>
+    <div class="match-detail" id="revealMatchDetail"></div>
+    <div class="why" id="revealWhy">With 23 people, there are already <strong>253 possible pairs</strong> (23×22÷2) who could share a birthday — that's why the odds climb so much faster than intuition expects.</div>
+  </div>
+
+  <div class="panel explore" id="explorePanel" style="display:none;">
+    <h2>Now try other numbers</h2>
+    <div class="controls">
+      <input type="range" id="nSlider" min="2" max="100" value="23" />
+    </div>
+    <div class="live-readout">
+      <span class="n" id="liveN">n = 23</span><span class="arrow">→</span><span class="pct" id="livePct">50.7%</span>
+    </div>
+    <div class="explore-sub">Drag the slider — the probability updates instantly.</div>
+  </div>
+
+  <div class="panel" id="chartPanel" style="display:none;">
+    <h2 style="margin-top:0; text-align:center; font-size:1.1rem; color:var(--maroon);">Probability of a match, by room size</h2>
+    <div class="chartwrap"><svg id="chart" width="720" height="260" viewBox="0 0 720 260"></svg></div>
+  </div>
+
+  <div class="panel" id="simPanel" style="display:none;">
+    <h2 style="margin-top:0; text-align:center; font-size:1.1rem; color:var(--maroon);">Want to see it happen for real?</h2>
+    <p style="text-align:center; color:var(--muted); margin-top:-4px;">Simulate an actual room of <span id="simNLabel">23</span> randomly-generated people.</p>
+    <div class="btn-row">
+      <button class="btn-primary" id="runBtn">🎲 Simulate a Room</button>
+      <button class="btn-secondary" id="resetBtn">Reset Count</button>
+    </div>
+    <div class="auto-toggle">
+      <input type="checkbox" id="autoToggle" />
+      <label for="autoToggle">Auto-run every 2s (booth idle mode)</label>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="result" id="result"></div>
+    <div class="match-detail" id="matchDetail"></div>
+
+    <div class="stats">
+      <div class="stat"><div class="num" id="statRooms">0</div><div class="lbl">Rooms Simulated</div></div>
+      <div class="stat"><div class="num" id="statMatches">0</div><div class="lbl">Had a Match</div></div>
+      <div class="stat"><div class="num" id="statPct">—</div><div class="lbl">Observed %</div></div>
+      <div class="stat"><div class="num" id="statTheory">—</div><div class="lbl">Theoretical %</div></div>
+    </div>
+  </div>
+
+  <div class="panel explain" id="explainPanel" style="display:none;">
+    <h2>Why is this surprising?</h2>
+    <p><strong>It's not about YOUR birthday.</strong> Matching one specific date needs a huge room (~253 people for 50/50). This is about ANY two people out of the whole room matching each other — and the number of possible <em>pairs</em> grows much faster than the number of people.</p>
+    <p>With just 23 people there are already <strong>253 possible pairs</strong> (23×22÷2). Each pair only needs a tiny chance of matching, but 253 separate tiny chances add up fast — past 50% by n = 23, and past 99% by n = 70.</p>
+    <p style="font-size:0.85rem;">No real birthdays are used here — every "person" above is a computer-simulated random date. That's the same simulation logic (Monte Carlo) used throughout quantitative methods research to check math that's hard to work out by hand.</p>
+  </div>
+
+  <footer>Nobody's real birthday is used in this demo — every person shown is randomly generated.</footer>
+</div>
+
+<script>
+(function() {
+  "use strict";
+
+  function theoreticalProb(n) {
+    let noMatch = 1;
+    for (let i = 0; i < n; i++) {
+      noMatch *= (365 - i) / 365;
+    }
+    return 1 - noMatch;
+  }
+
+  function pctStr(n) {
+    return (theoreticalProb(n) * 100).toFixed(1) + "%";
+  }
+
+  function dayToLabel(day) {
+    const lens = [31,28,31,30,31,30,31,31,30,31,30,31];
+    const names = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    let d = day;
+    for (let m = 0; m < 12; m++) {
+      if (d <= lens[m]) return names[m] + " " + d;
+      d -= lens[m];
+    }
+    return names[11] + " " + lens[11];
+  }
+
+  // ---- Guess panel ----
+  const guessSlider = document.getElementById("guessSlider");
+  const guessDisplay = document.getElementById("guessDisplay");
+  const revealBtn = document.getElementById("revealBtn");
+  const guessPanel = document.getElementById("guessPanel");
+  const revealHeadline = document.getElementById("revealHeadline");
+  const revealBig = document.getElementById("revealBig");
+  const revealLead = document.getElementById("revealLead");
+  const revealGrid = document.getElementById("revealGrid");
+  const revealMatchDetail = document.getElementById("revealMatchDetail");
+  const explorePanel = document.getElementById("explorePanel");
+  const chartPanel = document.getElementById("chartPanel");
+  const simPanel = document.getElementById("simPanel");
+  const explainPanel = document.getElementById("explainPanel");
+  const nSlider = document.getElementById("nSlider");
+  const liveN = document.getElementById("liveN");
+  const livePct = document.getElementById("livePct");
+  const simNLabel = document.getElementById("simNLabel");
+
+  // Randomize the starting guess position each load so it never
+  // quietly hints at the same "expected" value.
+  guessSlider.value = String(2 + Math.floor(Math.random() * 99));
+  guessDisplay.textContent = guessSlider.value + " people";
+
+  guessSlider.addEventListener("input", function() {
+    guessDisplay.textContent = guessSlider.value + " people";
+  });
+
+  revealBtn.addEventListener("click", function() {
+    guessPanel.style.display = "none";
+    revealHeadline.style.display = "block";
+    revealBig.textContent = "23 people";
+    revealLead.textContent = pctStr(23) + " chance of a shared birthday";
+    explorePanel.style.display = "block";
+    chartPanel.style.display = "block";
+    simPanel.style.display = "block";
+    explainPanel.style.display = "block";
+    nSlider.value = 23;
+    updateLiveReadout(23);
+    drawChart(23);
+
+    const room = generateRoom(23);
+    renderRoomGrid(revealGrid, 23, room.matchedIdx);
+    if (room.matchDay !== null) {
+      revealMatchDetail.textContent = "People #" + [...room.matchedIdx].map(i => i+1).join(", #") +
+        " were both born on " + dayToLabel(room.matchDay) + ".";
+    } else {
+      revealMatchDetail.textContent = "This particular batch of 23 didn't match — with the odds at " +
+        pctStr(23) + ", that happens plenty too. Try the slider below to see how the odds shift.";
+    }
+
+    window.scrollTo({ top: revealHeadline.offsetTop - 10, behavior: "smooth" });
+  });
+
+  function updateLiveReadout(n) {
+    liveN.textContent = "n = " + n;
+    livePct.textContent = pctStr(n);
+    simNLabel.textContent = n;
+    updateStatsDisplay();
+  }
+
+  // ---- Main simulator ----
+  let roomsRun = 0;
+  let roomsWithMatch = 0;
+  let autoTimer = null;
+
+  try {
+    const saved = localStorage.getItem("bday_stats");
+    if (saved) {
+      const obj = JSON.parse(saved);
+      roomsRun = obj.roomsRun || 0;
+      roomsWithMatch = obj.roomsWithMatch || 0;
+    }
+  } catch (e) { /* storage unavailable, start fresh */ }
+
+  function saveStats() {
+    try {
+      localStorage.setItem("bday_stats", JSON.stringify({ roomsRun, roomsWithMatch }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function updateStatsDisplay() {
+    document.getElementById("statRooms").textContent = roomsRun;
+    document.getElementById("statMatches").textContent = roomsWithMatch;
+    document.getElementById("statPct").textContent = roomsRun > 0
+      ? Math.round((roomsWithMatch / roomsRun) * 100) + "%"
+      : "—";
+    const n = parseInt(nSlider.value, 10);
+    document.getElementById("statTheory").textContent = pctStr(n);
+  }
+
+  function generateRoom(n) {
+    const days = [];
+    for (let i = 0; i < n; i++) days.push(1 + Math.floor(Math.random() * 365));
+
+    const seen = {};
+    let matchDay = null;
+    const matchedIdx = new Set();
+    for (let i = 0; i < n; i++) {
+      const d = days[i];
+      if (seen[d] !== undefined) {
+        matchDay = d;
+        matchedIdx.add(seen[d]);
+        matchedIdx.add(i);
+      } else {
+        seen[d] = i;
+      }
+    }
+    return { days, matchDay, matchedIdx };
+  }
+
+  function renderRoomGrid(gridEl, n, matchedIdx) {
+    gridEl.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      const chip = document.createElement("div");
+      chip.className = "chip" + (matchedIdx.has(i) ? " match" : "");
+      chip.textContent = i + 1;
+      gridEl.appendChild(chip);
+    }
+  }
+
+  function runRoom() {
+    const n = parseInt(nSlider.value, 10);
+    const room = generateRoom(n);
+
+    const grid = document.getElementById("grid");
+    renderRoomGrid(grid, n, room.matchedIdx);
+
+    const resultEl = document.getElementById("result");
+    const detailEl = document.getElementById("matchDetail");
+    if (room.matchDay !== null) {
+      resultEl.textContent = "🎉 Match found!";
+      resultEl.className = "result";
+      detailEl.textContent = "People #" + [...room.matchedIdx].map(i => i+1).join(", #") +
+        " were both born on " + dayToLabel(room.matchDay) + ".";
+      roomsWithMatch++;
+    } else {
+      resultEl.textContent = "No match this time";
+      resultEl.className = "result nomatch";
+      detailEl.textContent = "Try again — with n = " + n + ", a match happens about " +
+        pctStr(n) + " of the time.";
+    }
+    roomsRun++;
+    saveStats();
+    updateStatsDisplay();
+    drawChart(n);
+  }
+
+  document.getElementById("runBtn").addEventListener("click", runRoom);
+
+  document.getElementById("resetBtn").addEventListener("click", function() {
+    roomsRun = 0;
+    roomsWithMatch = 0;
+    saveStats();
+    updateStatsDisplay();
+    document.getElementById("grid").innerHTML = "";
+    document.getElementById("result").textContent = "";
+    document.getElementById("matchDetail").textContent = "";
+  });
+
+  nSlider.addEventListener("input", function() {
+    const n = parseInt(nSlider.value, 10);
+    updateLiveReadout(n);
+    drawChart(n);
+  });
+
+  document.getElementById("autoToggle").addEventListener("change", function(e) {
+    if (e.target.checked) {
+      autoTimer = setInterval(runRoom, 2000);
+    } else {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+  });
+
+  // ---- Chart ----
+  function drawChart(highlightN) {
+    const svg = document.getElementById("chart");
+    const W = 720, H = 260, padL = 46, padR = 16, padT = 16, padB = 34;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const maxN = 100;
+
+    let pts = [];
+    for (let n = 1; n <= maxN; n++) {
+      const p = theoreticalProb(n);
+      const x = padL + (n / maxN) * plotW;
+      const y = padT + (1 - p) * plotH;
+      pts.push([x, y]);
+    }
+    const pathD = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+
+    const y50 = padT + 0.5 * plotH;
+    const hx = padL + (highlightN / maxN) * plotW;
+    const hy = padT + (1 - theoreticalProb(highlightN)) * plotH;
+
+    let svgContent = "";
+    svgContent += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="currentColor" stroke-opacity="0.3"/>`;
+    svgContent += `<line x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}" stroke="currentColor" stroke-opacity="0.3"/>`;
+    svgContent += `<line x1="${padL}" y1="${y50}" x2="${padL+plotW}" y2="${y50}" stroke="#7A0019" stroke-dasharray="4,4" stroke-opacity="0.55"/>`;
+    svgContent += `<text x="${padL+plotW-2}" y="${y50-6}" text-anchor="end" fill="#7A0019">50%</text>`;
+    [0, 0.25, 0.5, 0.75, 1].forEach(function(v) {
+      const y = padT + (1 - v) * plotH;
+      svgContent += `<text x="${padL-8}" y="${y+4}" text-anchor="end">${Math.round(v*100)}%</text>`;
+    });
+    [1, 23, 40, 60, 80, 100].forEach(function(n) {
+      const x = padL + (n / maxN) * plotW;
+      svgContent += `<text x="${x}" y="${padT+plotH+18}" text-anchor="middle">${n}</text>`;
+    });
+    svgContent += `<path d="${pathD}" fill="none" stroke="#7A0019" stroke-width="2.5"/>`;
+    svgContent += `<line x1="${hx}" y1="${padT}" x2="${hx}" y2="${padT+plotH}" stroke="#7A0019" stroke-dasharray="3,3" stroke-opacity="0.9"/>`;
+    svgContent += `<circle cx="${hx}" cy="${hy}" r="6" fill="#7A0019" stroke="white" stroke-width="1.5"/>`;
+    svgContent += `<text x="${hx}" y="${padT-4}" text-anchor="middle" fill="#7A0019" font-weight="700">n=${highlightN}</text>`;
+
+    svg.innerHTML = svgContent;
+    svg.style.color = "inherit";
+  }
+
+  updateStatsDisplay();
+})();
+</script>
+</body>
+</html>
